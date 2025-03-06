@@ -1,0 +1,40 @@
+<header class="bg-white w-full z-20 top-0 shadow-lg" [ngClass]="state.isMenuOpen ? '' : 'fixed'">
+    <div class="flex flex-wrap justify-between h-[72px] normal-spacing py-4 items-center">
+        <div (click)="goTo('/')" class="cursor-pointer">
+            <img src="/icons/phlu-logo.svg" class="h-10" />
+        </div>
+        <div class="sm:hidden flex" (click)="changeState()">
+            <img src="/icons/menu.svg" class="h-6" *ngIf="!state.isMenuOpen" />
+        </div>
+        <div class="sm:flex hidden flex-row items-center">
+            <div class="mx-4" *ngFor="let link of links">
+                <a routerLink="{{link.link}}" class="inline-block text-[0] cursor-pointer">
+                    <p class="text-primary font-phlu font-semibold text-lg hover:text-black duration-300">
+                        {{ link.title }}
+                    </p>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div *ngIf="state.isMenuOpen" class="flex fixed top-0 left-0 w-screen h-full bg-white duration-400 z-40 p-5 overflow-x-hidden">
+        <div class="absolute top-[16px] right-[20px]" (click)="changeState()">
+            <img src="/icons/close.svg" class="h-8" *ngIf="state.isMenuOpen" />
+        </div>
+
+        <div (click)="goTo('/')" class="absolute top-[16px] left-[20px] cursor-pointer">
+            <img src="/icons/phlu-logo.svg" class="h-10" />
+        </div>
+
+        <div class="flex flex-col justify-center">
+            <div class="flex flex-col">
+                <div class="my-4" *ngFor="let link of links">
+                    <div (click)="goTo(link.link)" class="inline-block text-[0] cursor-pointer">
+                        <p class="text-primary font-phlu font-semibold text-[27px] hover:text-black duration-300" [title]="link.title">
+                            {{ link.title }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
