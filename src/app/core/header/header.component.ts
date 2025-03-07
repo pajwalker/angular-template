@@ -1,7 +1,11 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, Inject, Injectable, afterNextRender } from '@angular/core';
 import { Router, NavigationEnd, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
+import { WINDOW } from '../../_services/window.service';
+import { DOCUMENT } from '@angular/common';
+
+
 
 interface HeaderLink {
     id: number;
@@ -15,7 +19,22 @@ interface HeaderLink {
     templateUrl: './header.component.html',
     imports: [RouterLink, CommonModule]
 })
-export class HeaderComponent implements OnInit, OnDestroy {
+export class HeaderComponent implements OnInit, OnDestroy  {
+    private _window = inject(WINDOW);
+    private document = this._window.document;
+
+    constructor(private router: Router) {
+        afterNextRender(() => {
+            this.state.interval = this._window.setInterval(() => {
+                if (this.state.didScroll) {
+                    this.hasScrolled();
+                    this.state.didScroll = false;
+                    this.state.changedRoute = false;
+                } 
+            }, 250);
+        });
+    }
+
     links: Array<HeaderLink> = [
         { id: 1, title: 'Home', link: '/' },
         { id: 2, title: 'Studium', link: '/studium' },
@@ -39,15 +58,22 @@ export class HeaderComponent implements OnInit, OnDestroy {
         didScroll: false,
         changedRoute: false
     };
-
     private scrollEvent: any;
     private routeSubscription: Subscription | undefined;
 
-    constructor(private router: Router) {}
+    changeState(): void {
+        this.state.isMenuOpen = !this.state.isMenuOpen;
+    }    
+
+    goTo(route: string): void {
+        if (this.state.isMenuOpen) this.changeState();
+        this.router.navigate([route])
+    }
+
 
     ngOnInit(): void {
         this.scrollEvent = this.onScroll.bind(this);
-        window.addEventListener('scroll', this.scrollEvent);
+        this._window.addEventListener('scroll', this.scrollEvent);
 
         this.routeSubscription = this.router.events.subscribe(event => {
             if (event instanceof NavigationEnd) {
@@ -55,31 +81,14 @@ export class HeaderComponent implements OnInit, OnDestroy {
                 this.hasScrolled();
             }
         });
-
-        this.state.interval = window.setInterval(() => {
-            if (this.state.didScroll) {
-                this.hasScrolled();
-                this.state.didScroll = false;
-                this.state.changedRoute = false;
-            }
-        }, 250);
     }
 
     ngOnDestroy(): void {
-        window.removeEventListener('scroll', this.scrollEvent);
+        this._window.removeEventListener('scroll', this.scrollEvent);
         clearInterval(this.state.interval);
         if (this.routeSubscription) {
             this.routeSubscription.unsubscribe();
         }
-    }
-
-    changeState(): void {
-        this.state.isMenuOpen = !this.state.isMenuOpen;
-    }
-
-    goTo(route: string): void {
-        if (this.state.isMenuOpen) this.changeState();
-        this.router.navigate([route]);
     }
 
     private onScroll(): void {
@@ -87,8 +96,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
     }
 
     private hasScrolled(): void {
-        const st = window.scrollY;
-        const header = document.querySelector('header');
+        const st = this._window.scrollY;
+        const header = this.document.querySelector('header');
 
         if (Math.abs(this.state.lastScrollTop - st) <= this.state.delta) return;
 
@@ -96,12 +105,12 @@ export class HeaderComponent implements OnInit, OnDestroy {
             if (st > this.state.lastScrollTop && st > this.state.navbarHeight && !this.state.changedRoute) {
                 header.setAttribute('style', 'transition: top 0.5s ease-out 0s; top: -' + this.state.navbarHeight + 'px;');
             } else {
-                if (st + window.innerHeight < document.body.clientHeight || this.state.changedRoute) {
+                if (st + this._window.innerHeight < this.document.body.clientHeight || this.state.changedRoute) {
                     header.setAttribute('style', 'transition: top 1s cubic-bezier(0, 0.97, 0.58, 1) 0s; top: 0px;');
                 }
             }
         }
 
-        this.state.lastScrollTop = st;
+        this.state.lastScrollTop = 0;
     }
 }
